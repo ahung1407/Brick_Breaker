@@ -1,0 +1,11 @@
+../Core/Src/game_ui.c:20:6:game_init_state	7
+../Core/Src/game_ui.c:71:6:game_draw_initial_scene	1
+../Core/Src/game_ui.c:84:6:game_update_screen	1
+../Core/Src/game_ui.c:104:6:game_erase_brick	1
+../Core/Src/game_ui.c:111:6:game_draw_pause_screen	1
+../Core/Src/game_ui.c:134:6:game_clear_pause_screen	1
+../Core/Src/game_ui.c:141:13:draw_ui_bar	2
+../Core/Src/game_ui.c:154:13:draw_game_border	1
+../Core/Src/game_ui.c:158:13:draw_bricks	6
+../Core/Src/game_ui.c:187:13:draw_paddle	1
+../Core/Src/game_ui.c:191:13:draw_ball	1
