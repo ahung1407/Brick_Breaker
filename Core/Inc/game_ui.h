@@ -86,6 +86,9 @@ typedef struct {
 // Initialization
 void game_init_state(GameState *state);
 
+// Start Screen
+void game_draw_start_screen(void);
+
 // Full Draw (called once at the beginning)
 void game_draw_initial_scene(const GameState *state);
 void game_update_screen(GameState *state);
@@ -93,6 +96,9 @@ void game_update_screen(GameState *state);
 // Pause Screen
 void game_draw_pause_screen(const GameState *state);
 void game_clear_pause_screen(const GameState *state);
+
+// Game Over Screen
+void game_draw_game_over_screen(const GameState *state);
 
 // Partial Updates (called in the game loop)
 void game_update_paddle(Paddle *paddle);

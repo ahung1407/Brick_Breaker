@@ -136,6 +136,20 @@ void game_clear_pause_screen(const GameState *state) {
     game_draw_initial_scene(state);
 }
 
+/**
+ * @brief Displays the game over screen.
+ */
+void game_draw_game_over_screen(const GameState *state) {
+    lcd_fill(40, 100, SCREEN_WIDTH - 40, SCREEN_HEIGHT - 100, BLACK);
+    lcd_draw_rectangle(40, 100, SCREEN_WIDTH - 40, SCREEN_HEIGHT - 100, RED);
+
+    lcd_show_string_center(0, 120, "GAME OVER", WHITE, BLACK, 24, 1);
+
+    char score_str[20];
+    sprintf(score_str, "Final Score: %05lu", state->score);
+    lcd_show_string_center(0, 160, score_str, WHITE, BLACK, 16, 0);
+}
+
 // --- Private Drawing Functions ---
 
 static void draw_ui_bar(uint8_t lives, uint32_t score) {

@@ -107,45 +107,55 @@ int main(void) {
 	MX_TIM4_Init();
 	/* USER CODE BEGIN 2 */
 	system_init();
-
-	// 1. Khởi tạo trạng thái game
-	game_init_state(&game_state);
-	// 2. Vẽ toàn bộ màn hình game ban đầu (chỉ một lần)
-	game_draw_initial_scene(&game_state);
-
-	// 3. Thiết lập timer cho vòng lặp game
 	timer2_set(20); // ~50 FPS
+	game_state.status = GAME_START_SCREEN;
+	lcd_show_picture(0, 0, 240, 320, gImage_BK);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		button_scan();
-		if (button_count[4] == 1) { // Assuming button 4 is the pause button
-			switch (game_state.status) {
-			case GAME_PLAYING:
+
+		switch (game_state.status) {
+		case GAME_START_SCREEN:
+			if (button_count[0] == 1) {
+				game_init_state(&game_state);
+				game_draw_initial_scene(&game_state);
+				game_state.status = GAME_PLAYING;
+			}
+			break;
+		case GAME_PLAYING:
+			if (button_count[4] == 1) { // Pause Button
 				game_state.status = GAME_PAUSED;
 				game_draw_pause_screen(&game_state);
-				break;
-			case GAME_PAUSED:
+			} else if (button_count[5] == 1) { // Game Over Button
+				game_state.status = GAME_OVER;
+				game_draw_game_over_screen(&game_state);
+			}
+
+			if (timer2_flag == 1) {
+				timer2_flag = 0;
+				game_update_screen(&game_state);
+			}
+			break;
+		case GAME_PAUSED:
+			if (button_count[4] == 1) { // Resume Button
 				game_state.status = GAME_PLAYING;
 				game_clear_pause_screen(&game_state);
-				break;
-			default:
-				break;
 			}
-		}
-		if(timer2_flag == 1){
-			timer2_flag = 0; // Reset cờ timer ngay lập tức
-			if (game_state.status == GAME_PLAYING) {
-			// --- PHẦN LOGIC GAME (Cập nhật trạng thái) ---
-			// Game logic will be implemented here in another part.
-
-			// Cập nhật màn hình (chỉ vẽ lại những gì đã thay đổi)
-			game_update_screen(&game_state);
+			break;
+		case GAME_OVER:
+			if (button_count[5] == 1) { // Restart Game from Game Over
+				game_init_state(&game_state);
+				game_draw_initial_scene(&game_state);
+				game_state.status = GAME_PLAYING;
 			}
+			break;
+		default:
+			break;
 		}
-    /* USER CODE END WHILE */
+		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
 	}
