@@ -79,6 +79,7 @@ typedef struct {
     uint32_t score;
     uint8_t lives;
     GameStatus status;
+    uint8_t show_potentiometer_prompt;
 } GameState;
 
 // --- Function Prototypes ---

@@ -110,6 +110,7 @@ int main(void) {
 	timer2_set(20); // ~50 FPS
 	game_state.status = GAME_START_SCREEN;
 	lcd_show_picture(0, 0, 240, 320, gImage_BK);
+	lcd_show_string_center(0, 164, "PRESS BUTTON 1 TO PLAY", WHITE, 0, 16, 1);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -121,11 +122,17 @@ int main(void) {
 		case GAME_START_SCREEN:
 			if (button_count[0] == 1) {
 				game_init_state(&game_state);
+				game_state.show_potentiometer_prompt = 1;
 				game_draw_initial_scene(&game_state);
 				game_state.status = GAME_PLAYING;
 			}
 			break;
 		case GAME_PLAYING:
+			if (game_state.show_potentiometer_prompt && button_count[2] == 1) {
+				game_state.show_potentiometer_prompt = 0;
+				game_draw_initial_scene(&game_state);
+			}
+
 			if (button_count[4] == 1) { // Pause Button
 				game_state.status = GAME_PAUSED;
 				game_draw_pause_screen(&game_state);

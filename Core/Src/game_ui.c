@@ -8,10 +8,44 @@ static void draw_game_border(void);
 static void draw_bricks(const Brick bricks[BRICK_ROWS][BRICK_COLS]);
 static void draw_paddle(const Paddle *paddle);
 static void draw_ball(const Ball *ball);
+static void draw_potentiometer_prompt(void);
 
 // Calculated horizontal padding to center the grid
 #define GRID_PADDING_X ((SCREEN_WIDTH - (BRICK_COLS * BRICK_WIDTH) - ((BRICK_COLS - 1) * BRICK_GAP)) / 2)
 #define GRID_START_Y (UI_BAR_HEIGHT + 20)
+
+
+/**
+ * @brief Draws the prompt to rotate the potentiometer with a dashed border.
+ */
+static void draw_potentiometer_prompt(void) {
+    uint16_t box_x1 = 20;
+    uint16_t box_y1 = 150;
+    uint16_t box_x2 = SCREEN_WIDTH - 20;
+    uint16_t box_y2 = 200;
+    uint16_t color = WHITE;
+    uint16_t dash_length = 5;
+
+    // Draw dashed border
+    // Top and bottom
+    for (uint16_t x = box_x1; x < box_x2; x += 2 * dash_length) {
+        uint16_t end_x = x + dash_length;
+        if (end_x > box_x2) end_x = box_x2;
+        lcd_draw_line(x, box_y1, end_x, box_y1, color);
+        lcd_draw_line(x, box_y2, end_x, box_y2, color);
+    }
+    // Left and right
+    for (uint16_t y = box_y1; y < box_y2; y += 2 * dash_length) {
+        uint16_t end_y = y + dash_length;
+        if (end_y > box_y2) end_y = box_y2;
+        lcd_draw_line(box_x1, y, box_x1, end_y, color);
+        lcd_draw_line(box_x2, y, box_x2, end_y, color);
+    }
+
+    // Show the text lines
+    lcd_show_string_center(0, 164 - 8, "ROTATE POTENTIOMETER", WHITE, 0, 16, 1);
+    lcd_show_string_center(0, 164 + 8, "TO PLAY", WHITE, 0, 16, 1);
+}
 
 
 /**
@@ -40,6 +74,7 @@ void game_init_state(GameState *state) {
     state->score = 0;
     state->lives = 3;
     state->status = GAME_PLAYING;
+    state->show_potentiometer_prompt = 0;
 
     // 4. Initialize Bricks
     uint16_t brick_colors[BRICK_ROWS] = {BLUE, RED, YELLOW, GREEN, MAGENTA};
@@ -75,6 +110,9 @@ void game_draw_initial_scene(const GameState *state) {
     draw_bricks(state->bricks);
     draw_paddle(&state->paddle);
     draw_ball(&state->ball);
+    if (state->show_potentiometer_prompt) {
+    	draw_potentiometer_prompt();
+    }
 }
 
 /**
@@ -115,7 +153,7 @@ void game_draw_pause_screen(const GameState *state) {
     lcd_draw_rectangle(40, 100, SCREEN_WIDTH - 40, SCREEN_HEIGHT - 100, WHITE);
 
     // Show "PAUSED" text
-    lcd_show_string_center(0, 120, "PAUSED", WHITE, DARKGRAY, 24, 1);
+    lcd_show_string_center(-10, 120, "PAUSED", WHITE, DARKGRAY, 24, 1);
 
     // Show current score
     char score_str[20];
@@ -143,7 +181,7 @@ void game_draw_game_over_screen(const GameState *state) {
     lcd_fill(40, 100, SCREEN_WIDTH - 40, SCREEN_HEIGHT - 100, BLACK);
     lcd_draw_rectangle(40, 100, SCREEN_WIDTH - 40, SCREEN_HEIGHT - 100, RED);
 
-    lcd_show_string_center(0, 120, "GAME OVER", WHITE, BLACK, 24, 1);
+    lcd_show_string_center(-20, 120, "GAME OVER", WHITE, BLACK, 24, 1);
 
     char score_str[20];
     sprintf(score_str, "Final Score: %05lu", state->score);
@@ -166,7 +204,7 @@ static void draw_ui_bar(uint8_t lives, uint32_t score) {
 }
 
 static void draw_game_border(void) {
-    lcd_draw_rectangle(0, UI_BAR_HEIGHT, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, WHITE);
+    lcd_draw_rectangle(0, UI_BAR_HEIGHT, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, RED);
 }
 
 static void draw_bricks(const Brick bricks[BRICK_ROWS][BRICK_COLS]) {
