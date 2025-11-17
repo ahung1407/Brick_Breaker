@@ -90,6 +90,7 @@ void game_init_state(GameState *state) {
             brick->special = BRICK_SPECIAL_NONE;
 
             // Assign special bricks as per user request
+            // Canbe randomized or fixed positions
             if (row == 1 && col == 3) { // Example: Brick with extra ball
                 brick->special = BRICK_SPECIAL_BALL;
             } else if (row == 2 && col == 4) { // Example: Brick with power-up
