@@ -51,6 +51,7 @@ typedef struct {
     uint16_t color;
     BrickState state;
     BrickSpecial special;
+    // uint8_t hp; // Use in the future for multi-hit bricks
 } Brick;
 
 // Structure for the ball
@@ -64,11 +65,12 @@ typedef struct {
 
 // Structure for the paddle
 typedef struct {
-    uint16_t x, y;
+    uint16_t x, y; // Top-left corner
     uint16_t prev_x; // Previous position for efficient redraw
     uint16_t width;
     uint16_t height;
     uint16_t color;
+    uint16_t speed; // Pixels per frame
 } Paddle;
 
 // Structure for the entire game state
