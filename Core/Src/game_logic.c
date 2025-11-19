@@ -91,7 +91,7 @@ uint8_t resolve_ball_wall(Ball *ball) {
         collided = 1;
     }
     // Right wall
-    else if (ball->x + ball->radius >= SCREEN_WIDTH) {
+    else if (ball->x + ball->radius >= SCREEN_WIDTH - 1) {
         ball->dx = -fabsf(ball->dx);
         ball->x = SCREEN_WIDTH - ball->radius - 1;
         collided = 1;
@@ -103,7 +103,7 @@ uint8_t resolve_ball_wall(Ball *ball) {
         collided = 1;
     }
     // Bottom wall (missed paddle)
-    else if (ball->y + ball->radius >= SCREEN_HEIGHT) {
+    else if (ball->y + ball->radius >= SCREEN_HEIGHT - 1) {
         // Ball is out of bounds, typically handled as a life lost
         collided = 2; // Indicate out of bounds
     }
@@ -127,13 +127,19 @@ void step_world(GameState *state, float dt) {
     uint8_t wall_collision = resolve_ball_wall(ball);
     if (wall_collision == 2) {
         // Ball is out of bounds, lose a life
-        state->lives--;
+        state->lives -= 1;
+//        game_update_ui_bar(state->score, state -> lives);
         if (state->lives == 0) {
             state->status = GAME_OVER;
+            game_update_ui_bar(state -> score, state->lives);
+            game_draw_game_over_screen(state);
         } 
         else {
-            state->show_potentiometer_prompt = 1;
+        	state->show_potentiometer_prompt = 1;
+        	game_update_ball(&state -> ball);
+        	game_draw_initial_scene(state);
         }
+
         // Reset ball position above paddle
         ball->x = state->paddle.x + state->paddle.width / 2.0f;
         ball->y = state->paddle.y - ball->radius - 1;
@@ -148,6 +154,7 @@ void step_world(GameState *state, float dt) {
         for (int col = 0; col < BRICK_COLS; col++) {
             Brick *brick = &state->bricks[row][col];
             if (resolve_ball_brick(ball, brick)) {
+            	game_erase_brick(brick);
                 state->score += 10; // Increment score for destroyed brick
             }
         }

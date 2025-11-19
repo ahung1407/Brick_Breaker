@@ -108,6 +108,6 @@ void game_update_paddle(Paddle *paddle);
 void game_update_ball(Ball *ball);
 void game_erase_brick(const Brick *brick);
 void game_update_ui_bar(uint32_t score, uint8_t lives);
-
-
+void draw_game_border(void);
+void draw_potentiometer_prompt();
 #endif /* INC_GAME_UI_H_ */
