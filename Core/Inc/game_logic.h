@@ -3,7 +3,7 @@
 
 
 // --- Parameter for logic ---
-#define V_MIN 60
+#define V_MIN 100
 #define V_MAX 220
 #define V_X_MAX 180
 #define K_SPIN 0.18f
