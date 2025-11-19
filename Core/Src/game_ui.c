@@ -4,11 +4,10 @@
 
 // --- Private Function Prototypes ---
 static void draw_ui_bar(uint8_t lives, uint32_t score);
-static void draw_game_border(void);
 static void draw_bricks(const Brick bricks[BRICK_ROWS][BRICK_COLS]);
 static void draw_paddle(const Paddle *paddle);
 static void draw_ball(const Ball *ball);
-static void draw_potentiometer_prompt(void);
+//static void draw_potentiometer_prompt(void);
 
 // Calculated horizontal padding to center the grid
 #define GRID_PADDING_X ((SCREEN_WIDTH - (BRICK_COLS * BRICK_WIDTH) - ((BRICK_COLS - 1) * BRICK_GAP)) / 2)
@@ -18,7 +17,7 @@ static void draw_potentiometer_prompt(void);
 /**
  * @brief Draws the prompt to rotate the potentiometer with a dashed border.
  */
-static void draw_potentiometer_prompt(void) {
+void draw_potentiometer_prompt(void) {
     uint16_t box_x1 = 20;
     uint16_t box_y1 = 150;
     uint16_t box_x2 = SCREEN_WIDTH - 20;
@@ -41,10 +40,10 @@ static void draw_potentiometer_prompt(void) {
         lcd_draw_line(box_x1, y, box_x1, end_y, color);
         lcd_draw_line(box_x2, y, box_x2, end_y, color);
     }
-
     // Show the text lines
     lcd_show_string_center(0, 164 - 8, "ROTATE POTENTIOMETER", WHITE, 0, 16, 1);
     lcd_show_string_center(0, 164 + 8, "TO PLAY", WHITE, 0, 16, 1);
+
 }
 
 
@@ -66,8 +65,8 @@ void game_init_state(GameState *state) {
     state->ball.prev_x = state->ball.x;
     state->ball.y = state->paddle.y - state->ball.radius - 1;
     state->ball.prev_y = state->ball.y;
-    state->ball.dx = 2.0f;  // Initial velocity
-    state->ball.dy = -2.0f;
+    state->ball.dx = 0;  // Initial velocity
+    state->ball.dy = -60;
     state->ball.color = WHITE;
 
     // 3. Initialize Score and Lives
@@ -90,6 +89,7 @@ void game_init_state(GameState *state) {
             brick->special = BRICK_SPECIAL_NONE;
 
             // Assign special bricks as per user request
+            // Canbe randomized or fixed positions
             if (row == 1 && col == 3) { // Example: Brick with extra ball
                 brick->special = BRICK_SPECIAL_BALL;
             } else if (row == 2 && col == 4) { // Example: Brick with power-up
@@ -120,28 +120,18 @@ void game_draw_initial_scene(const GameState *state) {
  * Erases objects at their previous positions and redraws them at new positions.
  */
 void game_update_screen(GameState *state) {
-    // Erase old paddle
-    lcd_fill(state->paddle.prev_x, state->paddle.y, state->paddle.prev_x + state->paddle.width, state->paddle.y + state->paddle.height, BLACK);
-
-    // Erase old ball
-    lcd_draw_circle(state->ball.prev_x, state->ball.prev_y, BLACK, state->ball.radius, 1);
-
-    // Draw new paddle and ball
-    draw_paddle(&state->paddle);
-    draw_ball(&state->ball);
-
+	// update components
+	game_update_ball(& (state -> ball));
+	game_update_paddle(& (state -> paddle));
+	game_update_ui_bar(state -> score, state -> lives);
+	draw_game_border();
     // Update previous positions for the next frame
     state->paddle.prev_x = state->paddle.x;
     state->ball.prev_x = state->ball.x;
     state->ball.prev_y = state->ball.y;
 }
 
-/**
- * @brief Erases a single brick from the screen.
- */
-void game_erase_brick(const Brick* brick) {
-    lcd_fill(brick->x, brick->y, brick->x + brick->width, brick->y + brick->height, BLACK);
-}
+
 
 /**
  * @brief Displays the pause screen.
@@ -188,10 +178,44 @@ void game_draw_game_over_screen(const GameState *state) {
     lcd_show_string_center(0, 160, score_str, WHITE, BLACK, 16, 0);
 }
 
+
+// --- Partial Update Functions ---
+void game_update_paddle(Paddle *paddle) {
+    // Erase old paddle
+    lcd_fill(paddle->prev_x, paddle->y, paddle->prev_x + paddle->width, paddle->y + paddle->height, BLACK);
+    // Draw new paddle
+    draw_paddle(paddle);
+    // Update previous position
+    paddle->prev_x = paddle->x;
+}
+
+void game_update_ball(Ball *ball) {
+    // Erase old ball
+    lcd_draw_circle(ball->prev_x, ball->prev_y, BLACK, ball->radius, 1);
+    // Draw new ball
+    draw_ball(ball);
+    // Update previous position
+    ball->prev_x = ball->x;
+    ball->prev_y = ball->y;
+}
+
+/**
+ * @brief Erases a single brick from the screen.
+ */
+void game_erase_brick(const Brick* brick) {
+    lcd_fill(brick->x, brick->y, brick->x + brick->width, brick->y + brick->height, BLACK);
+}
+
+void game_update_ui_bar(uint32_t score, uint8_t lives) {
+    draw_ui_bar(lives, score);
+}
+
 // --- Private Drawing Functions ---
 
 static void draw_ui_bar(uint8_t lives, uint32_t score) {
     // Draw lives as filled circles
+	for (int i = 0; i < 3; i++)
+		lcd_draw_circle(15 + i * 20, 10, BLACK, 5, 1);
     for (int i = 0; i < 3; i++) {
         // Draw filled circle if lives > i, otherwise hollow
         lcd_draw_circle(15 + i * 20, 10, WHITE, 5, (i < lives));
@@ -203,7 +227,7 @@ static void draw_ui_bar(uint8_t lives, uint32_t score) {
     lcd_show_string_center(0, 2, score_str, WHITE, BLACK, 16, 0);
 }
 
-static void draw_game_border(void) {
+void draw_game_border(void) {
     lcd_draw_rectangle(0, UI_BAR_HEIGHT, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, RED);
 }
 

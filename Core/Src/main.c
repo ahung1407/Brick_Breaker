@@ -33,6 +33,8 @@
 #include "button.h"
 #include "picture.h"
 #include "game_ui.h"
+#include "game_logic.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -107,8 +109,9 @@ int main(void) {
 	MX_TIM4_Init();
 	/* USER CODE BEGIN 2 */
 	system_init();
-	timer2_set(20); // ~50 FPS
+	timer2_set(20); // ~50 FPS ~ 20ms
 	game_state.status = GAME_START_SCREEN;
+	// Display Intro Screen (Background Image + "PRESS BUTTON 1 TO PLAY")
 	lcd_show_picture(0, 0, 240, 320, gImage_BK);
 	lcd_show_string_center(0, 164, "PRESS BUTTON 1 TO PLAY", WHITE, 0, 16, 1);
 	/* USER CODE END 2 */
@@ -120,16 +123,32 @@ int main(void) {
 
 		switch (game_state.status) {
 		case GAME_START_SCREEN:
-			if (button_count[0] == 1) {
+			if (button_count[0] == 1) { // Change from Intro to Playing Screen
 				game_init_state(&game_state);
 				game_state.show_potentiometer_prompt = 1;
-				game_draw_initial_scene(&game_state);
 				game_state.status = GAME_PLAYING;
+				game_draw_initial_scene(&game_state);
 			}
 			break;
 		case GAME_PLAYING:
-			if (game_state.show_potentiometer_prompt && button_count[2] == 1) {
+			if (!game_state.show_potentiometer_prompt && timer2_flag == 1) { // Game Update over ~50 FPS
+				step_world(&game_state, 0.02f); // Assuming dt = 0.02 seconds for ~50 FPS
+				timer2_flag = 0;
+				// debug
+			    char vx_str[16];
+			    char vy_str[16];
+
+			    snprintf(vx_str, sizeof(vx_str), "%d", game_state.ball.dx);
+			    snprintf(vy_str, sizeof(vy_str), "%d", game_state.ball.dy);
+			    lcd_show_string_center(0, 164 - 8, vx_str, WHITE, 0, 16, 1);
+			    lcd_show_string_center(0, 164 + 8, vy_str, WHITE, 0, 16, 1);
+			    //end debug
+				game_update_screen(&game_state); // only updates changed components like paddle  and ball
+			}
+			if (game_state.show_potentiometer_prompt && button_count[2] == 1) { // Start Game after showing prompt, 
+																				// use potentiometer check  in the future
 				game_state.show_potentiometer_prompt = 0;
+				initialize_ball_velocity(&game_state.ball);		
 				game_draw_initial_scene(&game_state);
 			}
 
@@ -140,23 +159,19 @@ int main(void) {
 				game_state.status = GAME_OVER;
 				game_draw_game_over_screen(&game_state);
 			}
-
-			if (timer2_flag == 1) {
-				timer2_flag = 0;
-				game_update_screen(&game_state);
-			}
 			break;
 		case GAME_PAUSED:
 			if (button_count[4] == 1) { // Resume Button
 				game_state.status = GAME_PLAYING;
-				game_clear_pause_screen(&game_state);
+				game_draw_initial_scene(&game_state);
 			}
 			break;
 		case GAME_OVER:
 			if (button_count[5] == 1) { // Restart Game from Game Over
 				game_init_state(&game_state);
-				game_draw_initial_scene(&game_state);
 				game_state.status = GAME_PLAYING;
+				game_state.show_potentiometer_prompt = 1;
+				game_draw_initial_scene(&game_state);
 			}
 			break;
 		default:
