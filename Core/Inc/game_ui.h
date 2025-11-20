@@ -5,7 +5,7 @@
 #ifndef INC_GAME_UI_H_
 #define INC_GAME_UI_H_
 
-#include "stdint.h"
+#include <stdint.h>
 #include "lcd.h"
 
 #define SCREEN_WIDTH 240
@@ -22,6 +22,9 @@
 #define PADDLE_HEIGHT 10
 
 #define BALL_SIZE 8
+#define MAX_BALLS 4
+
+#define MAX_LIVES 4
 
 // Enum for Game Status
 typedef enum {
@@ -33,7 +36,8 @@ typedef enum {
 
 // Enum for brick state
 typedef enum {
-    BRICK_STATE_ACTIVE,
+    BRICK_STATE_INCOMING,   // dropping in from above screen
+    BRICK_STATE_ACTIVE,     // ready for collision
     BRICK_STATE_DESTROYED
 } BrickState;
 
@@ -51,6 +55,8 @@ typedef struct {
     uint16_t color;
     BrickState state;
     BrickSpecial special;
+    int16_t final_y;         // target y position after drop completes
+    uint8_t drop_speed;      // pixels per frame to drop
     // uint8_t hp; // Use in the future for multi-hit bricks
 } Brick;
 
@@ -76,10 +82,14 @@ typedef struct {
 // Structure for the entire game state
 typedef struct {
     Brick bricks[BRICK_ROWS][BRICK_COLS];
-    Ball ball;
+    Ball balls[MAX_BALLS];
+    uint8_t ball_count;
     Paddle paddle;
     uint32_t score;
     uint8_t lives;
+    uint8_t level;
+    int16_t brick_drop_offset; // negative while bricks are dropping in
+    uint8_t brick_dropping;
     GameStatus status;
     uint8_t show_potentiometer_prompt;
 } GameState;
@@ -107,7 +117,17 @@ void game_draw_game_over_screen(const GameState *state);
 void game_update_paddle(Paddle *paddle);
 void game_update_ball(Ball *ball);
 void game_erase_brick(const Brick *brick);
-void game_update_ui_bar(uint32_t score, uint8_t lives);
+void game_update_ui_bar(uint32_t score, uint8_t lives, uint8_t level);
 void draw_game_border(void);
 void draw_potentiometer_prompt();
+void game_erase_ball(const Ball *ball);
+
+// Special brick effects
+void spawn_extra_ball(GameState *state, const Ball *template_ball);
+void apply_plus_powerup(GameState *state);
+// Move paddle using two hardware buttons (button_count[5] = left, [6] = right)
+void game_handle_paddle_buttons(GameState *state);
+// Level management
+void advance_level(GameState *state);
+void init_bricks_for_level(GameState *state, uint8_t level, uint8_t animate);
 #endif /* INC_GAME_UI_H_ */

@@ -1,6 +1,7 @@
 #include "game_logic.h"
 #include <math.h>
-
+#include <stdio.h>
+#include <stdint.h>
 uint8_t circle_aabb_overlap(int16_t cx, int16_t cy, uint16_t radius,
                           uint16_t rx, uint16_t ry,
                           uint16_t rw, uint16_t rh) {
@@ -20,6 +21,11 @@ uint8_t circle_aabb_overlap(int16_t cx, int16_t cy, uint16_t radius,
 uint8_t resolve_ball_brick(Ball *ball, Brick *brick) {
     if (brick->state == BRICK_STATE_DESTROYED) {
         return 0; // No collision if brick is already destroyed
+    }
+    
+    // Only allow collision if brick is visible in game area (top edge reached the game area)
+    if (brick->y + brick->height <= UI_BAR_HEIGHT) {
+        return 0; // Brick is still above game area
     }
 
     if (!circle_aabb_overlap(ball->x, ball->y, ball->radius,
@@ -69,7 +75,7 @@ uint8_t resolve_ball_paddle(Ball *ball, const Paddle *paddle) {
     ball->dy = -fabsf(ball->dy); // Always reflect upwards
 
     // Adjust horizontal velocity based on where it hit the paddle
-    float hitPos = (ball->x - paddle->x) / paddle->width; // 0.0 (left) to 1.0 (right)
+    float hitPos = (float)(ball->x - paddle->x) / (float)paddle->width; // 0.0 (left) to 1.0 (right)
     ball->dx = (hitPos - 0.5f) * 2.0f * V_X_MAX; // Scale to max horizontal speed
 
     // Clamp ball position to be just above the paddle
@@ -118,45 +124,81 @@ void initialize_ball_velocity(Ball *ball) {
 }
 
 void step_world(GameState *state, float dt) {
-    Ball *ball = &state->ball;
+    // update all balls; be careful khi xóa ball trong vòng lặp
+    for (int i = 0; i < state->ball_count; ) {
+        Ball *b = &state->balls[i];
+        b->x += b->dx * dt;
+        b->y += b->dy * dt;
 
-    // Update ball position
-    ball->x += ball->dx * dt;
-    ball->y += ball->dy * dt;
-    // Resolve wall collisions
-    uint8_t wall_collision = resolve_ball_wall(ball);
-    if (wall_collision == 2) {
-        // Ball is out of bounds, lose a life
-        state->lives -= 1;
-//        game_update_ui_bar(state->score, state -> lives);
-        if (state->lives == 0) {
-            state->status = GAME_OVER;
-            game_update_ui_bar(state -> score, state->lives);
-            game_draw_game_over_screen(state);
-        } 
-        else {
-        	state->show_potentiometer_prompt = 1;
-        	game_update_ball(&state -> ball);
-        	game_draw_initial_scene(state);
+        uint8_t wc = resolve_ball_wall(b);
+        if (wc == 2) { // out of bounds
+            // Remove this ball from array (swap-with-last)
+        	game_update_ball(b);
+            game_erase_ball(b);
+            state->balls[i] = state->balls[state->ball_count - 1];
+            state->ball_count--;
+            continue; // do not increment i, process new occupant
+        } else {
+            if (wc == 1) {
+                // optionally play sound
+            }
+            // paddle collision
+            resolve_ball_paddle(b, &state->paddle);
+
+            // brick collisions: iterate bricks and call resolve_ball_brick(b, brick)
+            for (int row = 0; row < BRICK_ROWS; row++) {
+                for (int col = 0; col < BRICK_COLS; col++) {
+                    Brick *brick = &state->bricks[row][col];
+                    if (resolve_ball_brick(b, brick)) {
+                        game_erase_brick(brick);
+                        state->score += 10;
+                        // special handling:
+                        if (brick->special == BRICK_SPECIAL_BALL) {
+                            spawn_extra_ball(state, b);
+                        } else if (brick->special == BRICK_SPECIAL_PLUS) {
+                            apply_plus_powerup(state);
+                        }
+                    }
+                }
+            }
+            i++; // only advance if this ball remains
         }
-
-        // Reset ball position above paddle
-        ball->x = state->paddle.x + state->paddle.width / 2.0f;
-        ball->y = state->paddle.y - ball->radius - 1;
-        ball->dx = 0.0f;
-        ball->dy = -V_MIN;
-        return; // Skip further processing this frame
     }
-    // Resolve paddle collision
-    resolve_ball_paddle(ball, &state->paddle);
-    // Resolve brick collisions
+
+    // After loop: check if all bricks destroyed -> advance level
+    int active_bricks = 0;
     for (int row = 0; row < BRICK_ROWS; row++) {
         for (int col = 0; col < BRICK_COLS; col++) {
-            Brick *brick = &state->bricks[row][col];
-            if (resolve_ball_brick(ball, brick)) {
-            	game_erase_brick(brick);
-                state->score += 10; // Increment score for destroyed brick
-            }
+            if (state->bricks[row][col].state == BRICK_STATE_ACTIVE) active_bricks++;
+        }
+    }
+    if (active_bricks == 0) {
+        // advance to next level
+        advance_level(state);
+        // redraw initial scene to show new bricks
+        game_draw_initial_scene(state);
+        return; // skip life-check this frame
+    }
+
+    // If not advancing level, continue to handle balls out-of-bounds
+    if (state->ball_count == 0) {
+        state->lives--;
+        if (state->lives == 0) {
+            state->status = GAME_OVER;
+            game_draw_game_over_screen(state);
+            return;
+        } else {
+            // reset one ball above paddle and set ball_count = 1
+            Ball *b = &state->balls[0];
+            b->x = state->paddle.x + state->paddle.width / 2.0f;
+            b->y = state->paddle.y - b->radius - 1;
+            b->dx = 0; b->dy = -V_MIN;
+            state->ball_count = 1;
+            state->show_potentiometer_prompt = 1;
+            game_draw_initial_scene(state);
         }
     }
 }
+
+
+// spawn_extra_ball and other special effects are handled in game_ui.c
