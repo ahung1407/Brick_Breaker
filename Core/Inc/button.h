@@ -5,6 +5,8 @@
 #ifndef INC_BUTTON_H_
 #define INC_BUTTON_H_
 
+#define DEBOUNCE_THRESHOLD 3
+
 /* Includes */
 #include <stdint.h>
 

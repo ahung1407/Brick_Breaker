@@ -1,6 +1,6 @@
-../Core/Src/game_logic.c:4:9:circle_aabb_overlap	3
-../Core/Src/game_logic.c:20:9:resolve_ball_brick	9
-../Core/Src/game_logic.c:61:9:resolve_ball_paddle	2
-../Core/Src/game_logic.c:84:9:resolve_ball_wall	5
-../Core/Src/game_logic.c:117:6:initialize_ball_velocity	1
-../Core/Src/game_logic.c:123:6:step_world	6
+../Core/Src/game_logic.c:5:9:circle_aabb_overlap	3
+../Core/Src/game_logic.c:21:9:resolve_ball_brick	10
+../Core/Src/game_logic.c:67:9:resolve_ball_paddle	2
+../Core/Src/game_logic.c:87:9:resolve_ball_wall	5
+../Core/Src/game_logic.c:120:6:initialize_ball_velocity	1
+../Core/Src/game_logic.c:126:6:step_world	14
